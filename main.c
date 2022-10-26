@@ -2,6 +2,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <winuser.h>
+#include <unistd.h>
+
+typedef enum{
+  false,
+  true,
+} bool;
 
 struct VM{
   uint8_t *mem; 
@@ -10,23 +17,22 @@ struct VM{
   unsigned short PC;
   unsigned short *stack;
   uint8_t SP;
-  char *screen;
+  bool screen[32*64];
 };
 
-enum ERROR{
+enum ERR{
   OK,
   SEG_FAULT,
 };
 
-enum ERROR run(struct VM vm);
+enum ERR run(struct VM vm);
 
 struct VM init(){
      struct VM vm = {
     .mem = (uint8_t*)malloc(4096),
     .I = 0,
     .PC = 0,
-    .stack = (short*)malloc(16*2),
-    .screen = (char*)malloc(65*32)
+    .stack = (unsigned short*)malloc(16*2),
   };
      return vm;
 }
@@ -34,24 +40,29 @@ struct VM init(){
 void destroy(struct VM vm){
   free(vm.mem);
   free(vm.stack);
-  free(vm.screen);
 }
 
 
 int main(){
   struct VM vm = init();
+  //Read Debug
+  int fd = open("ibmlogo.ch8", ES_READONLY);
+  read(fd,vm.mem,4096);
+  
+  // Debug end
+
   int error = (int)run(vm);
   printf("Error level %d\n" , error);
   destroy(vm);
   return 0;
 }
 
-enum ERROR run(struct VM vm){
+enum ERR run(struct VM vm){
   if(vm.PC%2 != 0){
     return SEG_FAULT;
   }
 
-  short inst = (((short)vm.mem[vm.PC++])<<8)  |  (((short)vm.mem[vm.PC++])<<0);
+  unsigned short inst = (((unsigned short)vm.mem[vm.PC++])<<8)  |  (((unsigned short)vm.mem[vm.PC++])<<0);
 
   for(int i = 0; i < 10; ++i)
     printf("| %d |\n", vm.mem[i]); 
@@ -72,15 +83,18 @@ enum ERROR run(struct VM vm){
             return OK;
           else
             vm.PC = vm.stack[--vm.SP];
+            vm.PC--;
           break;
       };
       break;
     case 1:
       vm.PC = 0x0FFF & inst;
+      vm.PC--;
       break;
     case 2:
       vm.stack[vm.SP++] = vm.PC;
       vm.PC = 0x0FFF & inst;
+      vm.PC--;
       break;
     case 3:
       if ((inst & 0x00FF) == vm.V[(inst & 0x0F00)>>8])
@@ -156,10 +170,23 @@ enum ERROR run(struct VM vm){
       vm.PC--;
       break;
     case 0xC:
+      t1 = (inst&0x0F00) >> 8;
       vm.V[t1] = ((uint8_t)rand()%255) & (inst & 0x00FF);
       break;
     case 0xD:
+      t1 = (inst&0x0F00) >> 8;
+      t2 = (inst&0x00F0) >> 4;
+      //draw(t1,t2,inst&0x000F); //TODO
       break;
+    case 0xE:
+      switch(inst&0x000F){
+        case 0x1:
+          break;
+        case 0xE:
+          break;
+      };
+      break;
+
 
   };
 

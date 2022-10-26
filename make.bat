@@ -1,4 +1,5 @@
-gcc main.c -o output.exe
+set CC=mingw32-gcc
+%CC% main.c -o output.exe
 @echo off
 if NOT  %ERRORLEVEL% == 0 goto end
 @echo on
