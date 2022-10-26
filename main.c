@@ -46,10 +46,21 @@ void destroy(struct VM vm){
 int main(){
   struct VM vm = init();
   //Read Debug
-  int fd = open("ibmlogo.ch8", ES_READONLY);
-  read(fd,vm.mem,4096);
+  FILE *f = fopen("ibmlogo.ch8","r");
+
+  fseek(f,0,SEEK_END);
+  size_t size = ftell(f);
+  fseek(f,0,SEEK_SET);
+
+  uint8_t temp_array[size];
+
+  fread(temp_array,1,size,f);
+  fclose(f);
   
   // Debug end
+
+  for(size_t x = 0; x < size; ++x)
+    *(vm.mem+x) = temp_array[x];
 
   int error = (int)run(vm);
   printf("Error level %d\n" , error);
@@ -57,11 +68,64 @@ int main(){
   return 0;
 }
 
+//Helper functions
+
+void debugger(struct VM vm){
+  /*
+  uint8_t *mem; 
+  uint8_t V[16];
+  unsigned short I;
+  unsigned short PC;
+  unsigned short *stack;
+  uint8_t SP;
+  bool screen[32*64];
+  */
+
+  puts("Vx: ");
+  for(int i = 0; i < 8; ++i)
+    printf("V%d:%d ",i,vm.V[i]);
+  printf("\n");
+  for(int i = 8; i < 16; ++i)
+    printf("V%d:%d ",i,vm.V[i]);
+  printf("\nI: %d\n",vm.I);
+  printf("PC: %d\n",vm.PC);
+  printf("SP: %d\n",vm.SP);
+}
+
+void print(bool *screen){
+  char graph[32*64+32];
+  for(int i = 0; i < 32; ++i){
+    for(int j = 0; j < 64; ++j){
+      if(screen[i*64+j])
+        graph[i*65+j] = '@';
+      else
+        graph[i*65+j] = ' ';
+    }
+  }
+  for(int i = 0; i < 32; ++i){
+    screen[i*65+64] = '\n';
+  }
+  printf("%s",graph);
+}
+
+
+void cls(bool *screen){
+  char graph[32*64+32];
+  for(int i = 0; i < 32*65; ++i){
+    screen[i] = ' ';
+  }
+  for(int i = 0; i < 32; ++i){
+    screen[i*65+64] = '\n';
+  }
+  printf("%s",graph);
+}
+
 enum ERR run(struct VM vm){
   if(vm.PC%2 != 0){
     return SEG_FAULT;
   }
 
+  debugger(vm);
   unsigned short inst = (((unsigned short)vm.mem[vm.PC++])<<8)  |  (((unsigned short)vm.mem[vm.PC++])<<0);
 
   for(int i = 0; i < 10; ++i)
@@ -76,7 +140,7 @@ enum ERR run(struct VM vm){
     case 0:
       switch(inst){
         case 0x00E0:
-          //cls(); //TODO
+          cls(vm.screen); 
           break; 
         case 0x00EE:
           if(vm.SP == 0)
