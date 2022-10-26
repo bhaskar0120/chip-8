@@ -5,3 +5,5 @@ if NOT  %ERRORLEVEL% == 0 goto end
 @echo on
 output.exe
 :end
+@echo off
+echo Program exited with error: %errorlevel%
