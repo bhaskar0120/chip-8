@@ -1,4 +1,4 @@
-### Chip-8 emulator
+# Chip-8 emulator
 
 ***This is a work in progress***
 
@@ -6,8 +6,9 @@ A chip-8 emulator written in C. The material that is followed for making this ca
 
 The material used can be found here : [Material link](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#1.0)
 
-#### ToDo
+### ToDo
 - [ ] Write a Debugger
+- [x] Write a simple chip-8 file maker
 - [x] Implement Instructions Dxyn
 - [ ] Implement Instructions Ex9E
 - [ ] Implement Instructions ExA1
